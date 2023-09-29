@@ -1,6 +1,4 @@
-from cgitb import text
 import time
-import re
 from string import punctuation
 
 word_substitutions = {
@@ -12,7 +10,7 @@ word_substitutions = {
 }
 
 
-def check_word(word):
+def replace_word(word):
     if word in word_substitutions:
         word = word_substitutions[word]
     else:
@@ -23,41 +21,38 @@ def check_word(word):
 
 
 # Attempts to open a file. If that fails, assume it's just a string and dumbassify it.
-def dumbassify(text_or_source, dump_to_file=False, dump_file_name='dumbassify.txt'):
+def dumbassify(text_source, dump_to_file=False, dump_file_name='dumbassify.txt'):
     start = time.time()
-    word_buffer = list()
 
-    # Side-effecty AF, but whatever. 
     try:
-        source = open(text_or_source, 'r').read()  # Not every file name will have a dot, so I don't bother checking.
-    except:
-        if not isinstance(text_or_source, str):
-            raise ValueError('"text_or_source" must be a string or file name.')
-
-        source = text_or_source
-
-    word_buffer = source.split(' ')
-    # print(word_buffer[0])
+        with open(text_source, 'r') as source_file:
+            source = source_file.read()
+    except FileNotFoundError:
+        raise FileNotFoundError(f"File {text_source} not found.")
     
-    dumbassified_text = ' '.join([check_word(word) for word in word_buffer])
+    except Exception as e:
+        raise Exception(f"Error: {e}")
+
+    dumbassified_text = ' '.join([replace_word(word) for word in source.split(' ')])
+
     print(dumbassified_text)
 
-    # TODO
     if dump_to_file:
-        # with open(dump_file_name, 'w') as dump_file:
-        #   dump_file.write(mockified_text)
-        pass  
+        with open(dump_file_name, 'w') as dump_file:
+          dump_file.write(dumbassified_text)
 
     return dumbassified_text, len(source.split(' ')), time.time()-start
 
 
 def dump_stats(data):
-    print("{} \nDumbassified {} words in {:0.2f}s\n".format(data[0], data[1], data[2]))
+    text, word_count, time_elapsed = data
+    print(f"{text} \nDumbassified {word_count} words in {time_elapsed:.2f}s\n")
 
 
-def dummy_file(name='dummy.txt'):
-    with open(name) as f:
+def create_dummy_file(name='dummy.txt'):
+    with open(name, 'w') as f:
         f.write('hi')
+
     f.close()
 
 
